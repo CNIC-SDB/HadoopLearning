@@ -47,8 +47,12 @@ public class WordCount {
 	
 	public static void main(String[] args) throws Exception{
 		Configuration conf=new Configuration();
+		conf.addResource("core-site.xml");
+		conf.addResource("hdfs-site.xml");
+		conf.addResource("mapred-site.xml");
+		conf.addResource("yarn-site.xml");
 		Job job=Job.getInstance(conf,"word count");
-		job.setJarByClass(WordCount.class);
+		job.setJar("D:\\workspace\\HadoopLearning\\wordcount\\target\\wordcount-1.0-SNAPSHOT.jar");;
 		job.setMapperClass(TokenizerMapper.class);
 		job.setReducerClass(IntSumReducer.class);
 		FileInputFormat.addInputPath(job, new Path(args[0]));

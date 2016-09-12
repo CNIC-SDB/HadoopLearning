@@ -16,57 +16,23 @@
     	<groupId>org.apache.hadoop</groupId>
     	<artifactId>hadoop-common</artifactId>
     	<version>${HadoopVersion}</version>
-    	<exclusions>
-    		<exclusion>
-    			<groupId>com.google.protobuf</groupId>
-    			<artifactId>protobuf-java</artifactId>
-    		</exclusion>
-    	</exclusions>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.hadoop</groupId>
+    	<artifactId>hadoop-auth</artifactId>
+    	<version>${HadoopVersion}</version>
+    	<scope>runtime</scope>
     </dependency>
     <dependency>
     	<groupId>org.apache.hadoop</groupId>
     	<artifactId>hadoop-hdfs</artifactId>
     	<version>${HadoopVersion}</version>
-    	<exclusions>
-    		<exclusion>
-    			<groupId>com.google.protobuf</groupId>
-    			<artifactId>protobuf-java</artifactId>
-    		</exclusion>
-    	</exclusions>
     </dependency>
     <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>${HadoopVersion}</version>
-            <exclusions>
-            	<exclusion>
-            		<groupId>com.google.protobuf</groupId>
-            		<artifactId>protobuf-java</artifactId>
-            	</exclusion>
-            </exclusions>
+    	<groupId>org.apache.hadoop</groupId>
+    	<artifactId>hadoop-client</artifactId>
+    	<version>${HadoopVersion}</version>
     </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-            <version>${HadoopVersion}</version>
-            <exclusions>
-            	<exclusion>
-            		<groupId>com.google.protobuf</groupId>
-            		<artifactId>protobuf-java</artifactId>
-            	</exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-common</artifactId>
-            <version>${HadoopVersion}</version>
-            <exclusions>
-            	<exclusion>
-            		<groupId>com.google.protobuf</groupId>
-            		<artifactId>protobuf-java</artifactId>
-            	</exclusion>
-            </exclusions>
-        </dependency>
     <dependency>  
     <groupId>jdk.tools</groupId>  
     <artifactId>jdk.tools</artifactId>  
