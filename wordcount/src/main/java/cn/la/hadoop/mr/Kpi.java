@@ -97,4 +97,43 @@ public class Kpi {
 		sb.append("\nhttp_user_agent:"+this.http_user_agent);
 		return sb.toString();
 	}
+	
+	public static void main(String[] args){
+		String line="118.244.237.5 - - [18/Apr/2015:01:01:17 +0800] \"GET /home.php?mod=spacecp&ac=follow&op=checkfeed&rand=1429290077 HTTP/1.0\" 200 946 \"http://www.aboutyun.com/home.php?mod=spacecp\" \"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.11 Safari/537.36\"";
+		for(String element:line.split(" ")){
+			System.out.println(element);
+		}
+		System.out.println(parser(line));
+	}
+	
+	public static Kpi parser(String line){
+		System.out.println(line);
+		Kpi kpi=new Kpi();
+		String[] arr=line.split(" ");
+		if(arr.length>11){
+			try {
+				kpi.setRemote_addr(arr[0]);
+				kpi.setRemote_user(arr[1]);
+				kpi.setTime_local(arr[3].substring(1));
+				kpi.setRequest(arr[6]);
+				kpi.setStatus(arr[8]);
+				kpi.setBody_bytes_sent(arr[9]);
+				kpi.setHttp_referer(arr[10]);
+				if(arr.length>12){
+					kpi.setHttp_user_agent(arr[11]+" "+arr[12]);
+				}else{
+					kpi.setHttp_user_agent(arr[11]);
+				}
+				if(!"GET".equalsIgnoreCase(arr[5].replace("\"", "").trim())&&!"POST".equalsIgnoreCase(arr[5].replace("\"", "").trim()))
+					kpi.setValid(false);
+				else if(Integer.parseInt(kpi.getStatus())>=400)
+					kpi.setValid(false);
+			} catch (Exception e) {
+				kpi.setValid(false);
+			}
+		}else{
+			kpi.setValid(false);
+		}
+		return kpi;
+	}
 }

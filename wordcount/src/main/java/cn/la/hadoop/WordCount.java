@@ -52,7 +52,7 @@ public class WordCount {
 		conf.addResource("mapred-site.xml");
 		conf.addResource("yarn-site.xml");
 		Job job=Job.getInstance(conf,"word count");
-		job.setJar("D:\\workspace\\HadoopLearning\\wordcount\\target\\wordcount-1.0-SNAPSHOT.jar");;
+		job.setJar("E:\\StudyResource\\Workspace\\HadoopLearning\\wordcount\\target\\wordcount-1.0-SNAPSHOT.jar");;
 		job.setMapperClass(TokenizerMapper.class);
 		job.setReducerClass(IntSumReducer.class);
 		FileInputFormat.addInputPath(job, new Path(args[0]));
