@@ -35,15 +35,18 @@ public class DataSave {
         Connection connection = ConnectionFactory.createConnection(conf);
 //        Table gwacData = null;
         BufferedMutator mutator = null;
+        long startTime = System.currentTimeMillis();
+//        int costTime = 0;
+        long allCount = 0;
         try {
 //            gwacData = connection.getTable(TableName.valueOf("g1"));
             BufferedMutatorParams params = new BufferedMutatorParams(TableName.valueOf("g1"));
-            params.writeBufferSize(16 * 1024 * 1024);
+            params.writeBufferSize(20 * 1024 * 1024);
 //            params.pool(Executors.newFixedThreadPool(16 * 2));
             mutator = connection.getBufferedMutator(params);
             System.out.println("客户端缓存：" + mutator.getWriteBufferSize());
-            int costTime = 0;
-            long allCount = 0;
+            System.out.println("key-value max：" + params.getMaxKeyValueSize());
+
             while (times-- > 0) {
                 List<StarModel> starModels = dataProduct.getStarModels();
                 long start = System.currentTimeMillis();
@@ -53,7 +56,7 @@ public class DataSave {
                     int keyId = new Random().nextInt(170000);
                     String key = keyId + "." + new Random().nextInt(20) + "." + System.currentTimeMillis() / 1000;
                     Put put = new Put(Bytes.toBytes(key));
-                    put.setDurability(Durability.ASYNC_WAL);
+                    put.setDurability(Durability.SKIP_WAL);
                     put.addColumn("f".getBytes(), StarModel.CCD_NUM.getBytes(), Bytes.toBytes(starModel.getCcd_num()));
                     put.addColumn("f".getBytes(), StarModel.IMAGEID.getBytes(), Bytes.toBytes(starModel.getImageid()));
                     put.addColumn("f".getBytes(), StarModel.ZONE.getBytes(), Bytes.toBytes(starModel.getZone()));
@@ -82,23 +85,24 @@ public class DataSave {
                 mutator.mutate(puts);
 //                gwacData.put(puts);
                 long end = System.currentTimeMillis();
-                System.out.println("上传" + starModels.size() + "条数据，耗时：" + (end - start) + "毫秒");
-                costTime += end - start;
+//                System.out.println("上传" + starModels.size() + "条数据，耗时：" + (end - start) + "毫秒");
+//                costTime += end - start;
                 allCount += starModels.size();
             }
-            System.out.println("上传" + allCount + "条数据，耗时：" + costTime + "毫秒");
+//            System.out.println("上传" + allCount + "条数据，耗时：" + costTime + "毫秒");
         } finally {
 //            gwacData.close();
             mutator.close();
             connection.close();
         }
+        System.out.println("上传" + allCount + "条数据，耗时：" + (System.currentTimeMillis() - startTime) + "毫秒");
     }
 
 
     private static void batchInsert(String args[]) throws Exception {
         int cacheLength = 5;
-        int cellSize = 100;
-        int times = 1;
+        int cellSize = 5000;
+        int times = 50;
         if (args.length == 3) {
             cacheLength = Integer.valueOf(args[0]);
             cellSize = Integer.valueOf(args[1]);
