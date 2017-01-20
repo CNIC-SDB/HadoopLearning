@@ -8,6 +8,9 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 /**
@@ -22,6 +25,7 @@ public class DataSave {
         conf = HBaseConfiguration.create();
         conf.set("hbase.zookeeper.quorum", "WAMDM81,WAMDM82,WAMDM83,WAMDM84,WAMDM85");
         conf.set("hbase.zookeeper.property.clientPort", "2181");
+//        conf.set("hbase.htable.threads.max", "8");
 //        conf.set("hbase.master", "hdfs://10.0.83.149:60000");
 //        conf.set("hbase.root.dir", "hdfs://10.0.83.149:9000/hbase");
     }
@@ -29,9 +33,15 @@ public class DataSave {
 
     public void saveData1(DataProduct dataProduct, int times) throws Exception {
         Connection connection = ConnectionFactory.createConnection(conf);
-        Table gwacData = null;
+//        Table gwacData = null;
+        BufferedMutator mutator = null;
         try {
-            gwacData = connection.getTable(TableName.valueOf("gwacsplit"));
+//            gwacData = connection.getTable(TableName.valueOf("g1"));
+            BufferedMutatorParams params = new BufferedMutatorParams(TableName.valueOf("g1"));
+            params.writeBufferSize(16 * 1024 * 1024);
+//            params.pool(Executors.newFixedThreadPool(16 * 2));
+            mutator = connection.getBufferedMutator(params);
+            System.out.println("客户端缓存：" + mutator.getWriteBufferSize());
             int costTime = 0;
             long allCount = 0;
             while (times-- > 0) {
@@ -40,8 +50,10 @@ public class DataSave {
                 ArrayList<Put> puts = Lists.newArrayListWithCapacity(starModels.size());
                 for (int i = 0; starModels.size() > i; i++) {
                     StarModel starModel = starModels.get(i);
-                    Put put = new Put(Bytes.toBytes(starModel.getRowKeyId()));
-                    put.setWriteToWAL(false);
+                    int keyId = new Random().nextInt(170000);
+                    String key = keyId + "." + new Random().nextInt(20) + "." + System.currentTimeMillis() / 1000;
+                    Put put = new Put(Bytes.toBytes(key));
+                    put.setDurability(Durability.ASYNC_WAL);
                     put.addColumn("f".getBytes(), StarModel.CCD_NUM.getBytes(), Bytes.toBytes(starModel.getCcd_num()));
                     put.addColumn("f".getBytes(), StarModel.IMAGEID.getBytes(), Bytes.toBytes(starModel.getImageid()));
                     put.addColumn("f".getBytes(), StarModel.ZONE.getBytes(), Bytes.toBytes(starModel.getZone()));
@@ -67,7 +79,8 @@ public class DataSave {
                     put.addColumn("f".getBytes(), StarModel.ORIG_CATID.getBytes(), Bytes.toBytes(starModel.getOrig_catid()));
                     puts.add(put);
                 }
-                gwacData.put(puts);
+                mutator.mutate(puts);
+//                gwacData.put(puts);
                 long end = System.currentTimeMillis();
                 System.out.println("上传" + starModels.size() + "条数据，耗时：" + (end - start) + "毫秒");
                 costTime += end - start;
@@ -75,7 +88,8 @@ public class DataSave {
             }
             System.out.println("上传" + allCount + "条数据，耗时：" + costTime + "毫秒");
         } finally {
-            gwacData.close();
+//            gwacData.close();
+            mutator.close();
             connection.close();
         }
     }

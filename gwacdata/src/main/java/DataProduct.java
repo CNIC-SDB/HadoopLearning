@@ -63,7 +63,8 @@ public class DataProduct {
     }
 
     public StarModel createStar() {
-        String rowKeyId = new Random().nextInt(170000) + "." + new Random().nextInt(20) + "." + System.currentTimeMillis() / 1000;
+        String rowKeyId = null;
+//        String rowKeyId = new Random().nextInt(170000) + "." + new Random().nextInt(20) + "." + System.currentTimeMillis() / 1000;
         int ccd_num = new Random().nextInt(10000);
         int imageid = new Random().nextInt(10000);
         float zone = new Random().nextFloat();
