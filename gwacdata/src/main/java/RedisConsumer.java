@@ -23,7 +23,8 @@ public class RedisConsumer {
         System.out.println("开始：" + startTime);
         AtomicInteger count = new AtomicInteger(0);
         CountDownLatch latch = new CountDownLatch(18);
-        ExecutorService pool = Executors.newFixedThreadPool(Integer.valueOf(args[0]));
+        int readThreadNum = Integer.valueOf(args[0]);
+        ExecutorService pool = Executors.newFixedThreadPool(readThreadNum);
         Set<HostAndPort> jedisClusterNodes = new HashSet<>();
         for (int start = 68, port = 7001; start < 88; start++) {
             for (int i = 0; i < 4; i++, port++) {
@@ -45,31 +46,37 @@ public class RedisConsumer {
                     }
                 });
         long keyCost = 0;
+        String keyPrefix = "ref_" + args[3] + "_";
         try (Connection connection = ConnectionFactory.createConnection(configuration);
              BufferedMutator bm = connection.getBufferedMutator(params)) {
-            Set<String> keys;
-            long getKeyStart = new Date().getTime();
-            keys = keys("ref_1_?", js);
-            keys.addAll(keys("ref_1_??", js));
-            keys.addAll(keys("ref_1_???", js));
-            keys.addAll(keys("ref_1_????", js));
-            long getKeyEnd = new Date().getTime();
-            keyCost += (getKeyEnd - getKeyStart);
-            pool.submit(new PutsThread(bm, keys, js, null, latch, count, "ref_1_????"));
-            String pattern;
-            for (int i = 1; i < 18; i++) {
-                pattern = i + "????";
-                getKeyStart = new Date().getTime();
-                keys = keys("ref_1_" + pattern, js);
-                getKeyEnd = new Date().getTime();
-                keyCost += (getKeyEnd - getKeyStart);
-                pool.submit(new PutsThread(bm, keys, js, null, latch, count, "ref_1_" + pattern));
+//            Set<String> keys;
+//            long getKeyStart = new Date().getTime();
+//            keys = keys("ref_1_?", js);
+//            keys.addAll(keys("ref_1_??", js));
+//            keys.addAll(keys("ref_1_???", js));
+//            keys.addAll(keys("ref_1_????", js));
+//            long getKeyEnd = new Date().getTime();
+//            keyCost += (getKeyEnd - getKeyStart);
+//            pool.submit(new PutsThread(bm, keys, js, null, latch, count, keyPrefix,));
+//            String pattern;
+//            for (int i = 1; i < 18; i++) {
+//                pattern = i + "????";
+//                getKeyStart = new Date().getTime();
+//                keys = keys("ref_1_" + pattern, js);
+//                getKeyEnd = new Date().getTime();
+//                keyCost += (getKeyEnd - getKeyStart);
+//                pool.submit(new PutsThread(bm, keys, js, null, latch, count, "ref_1_" + pattern));
+//            }
+            for (int i = 0; i < readThreadNum; i++) {
+                int startId = i * 180000 / readThreadNum;
+                int endId = startId + 180000 / readThreadNum - 1;
+                pool.submit(new PutsThread(bm, null, js, null, latch, count, keyPrefix, startId, endId));
             }
             latch.await();
         }
         System.out.println("数据量：" + count.get());
         System.out.println("总用时：" + (new Date().getTime() - startTime));
-        System.out.println("获取keys用时：" + keyCost);
+//        System.out.println("获取keys用时：" + keyCost);
         pool.shutdown();
     }
 

@@ -23,8 +23,11 @@ public class PutsThread implements Runnable {
     private CountDownLatch latch;
     private AtomicInteger count;
     private String name;
+    private int startId;
+    private int endId;
 
-    public PutsThread(BufferedMutator bm, Set<String> ids, JedisCluster jedisCluster, String id, CountDownLatch latch, AtomicInteger count, String name) {
+    public PutsThread(BufferedMutator bm, Set<String> ids, JedisCluster jedisCluster,
+                      String id, CountDownLatch latch, AtomicInteger count, String name, int startId, int endId) {
         this.bm = bm;
         this.ids = ids;
         this.jedisCluster = jedisCluster;
@@ -32,15 +35,20 @@ public class PutsThread implements Runnable {
         this.latch = latch;
         this.count = count;
         this.name = name;
+        this.startId = startId;
+        this.endId = endId;
     }
 
     @Override
     public void run() {
         try {
-            System.out.println("开始处理id：" + name);
+            System.out.println("开始处理id：" + name + "(" + startId + "-" + endId + ")");
             DecimalFormat df = new DecimalFormat("000000");
             DecimalFormat df1 = new DecimalFormat("000");
-            for (String id : ids) {
+            for (int i = startId; i <= endId; i++) {
+                this.id = this.name + i;
+                if (!jedisCluster.exists(this.id))
+                    continue;
                 String[] splits = id.split("_");
                 String splitNum = df.format(Integer.valueOf(splits[2])).substring(0, 2);
                 String rowkeyPrefix = df1.format((Integer.valueOf(splits[1]) - 1) * 18 + Integer.valueOf(splitNum));
@@ -83,7 +91,7 @@ public class PutsThread implements Runnable {
             e.printStackTrace();
         } finally {
             this.latch.countDown();
-            System.out.println("id为：" + name + "完成");
+            System.out.println("id为：" + name + "(" + startId + "-" + endId + ")完成");
         }
 
     }
