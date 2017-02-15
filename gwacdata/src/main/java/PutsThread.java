@@ -46,44 +46,34 @@ public class PutsThread implements Runnable {
             DecimalFormat df = new DecimalFormat("000000");
             DecimalFormat df1 = new DecimalFormat("000");
             for (int i = startId; i <= endId; i++) {
-                this.id = this.name + i;
-                if (!jedisCluster.exists(this.id))
+                String id = this.name + i;
+                if (!jedisCluster.exists(id))
                     continue;
                 String[] splits = id.split("_");
                 String splitNum = df.format(Integer.valueOf(splits[2])).substring(0, 2);
                 String rowkeyPrefix = df1.format((Integer.valueOf(splits[1]) - 1) * 18 + Integer.valueOf(splitNum));
-//                System.out.print(rowkeyPrefix+" ");
-                List<String> values = this.jedisCluster.lrange(id, 0, this.jedisCluster.llen(id) - 1);
-                List<Put> puts = new ArrayList<>(values.size());
-                for (String value : values) {
-                    String[] cols = value.split(" ");
-                    Put put = new Put((rowkeyPrefix + id + "_" + cols[24]).getBytes());
-                    put.setDurability(Durability.SKIP_WAL);
-                    put.addColumn("cf".getBytes(), StarModel.CCD_NUM.getBytes(), Bytes.toBytes(cols[1]));
-                    put.addColumn("cf".getBytes(), StarModel.IMAGEID.getBytes(), Bytes.toBytes(cols[2]));
-                    put.addColumn("cf".getBytes(), StarModel.ZONE.getBytes(), Bytes.toBytes(cols[3]));
-                    put.addColumn("cf".getBytes(), StarModel.RA.getBytes(), Bytes.toBytes(cols[4]));
-                    put.addColumn("cf".getBytes(), StarModel.DEC.getBytes(), Bytes.toBytes(cols[5]));
-                    put.addColumn("cf".getBytes(), StarModel.MAG.getBytes(), Bytes.toBytes(cols[6]));
-                    put.addColumn("cf".getBytes(), StarModel.X_PIX.getBytes(), Bytes.toBytes(cols[7]));
-                    put.addColumn("cf".getBytes(), StarModel.Y_PIX.getBytes(), Bytes.toBytes(cols[8]));
-                    put.addColumn("cf".getBytes(), StarModel.RA_ERR.getBytes(), Bytes.toBytes(cols[9]));
-                    put.addColumn("cf".getBytes(), StarModel.DEC_ERR.getBytes(), Bytes.toBytes(cols[10]));
-                    put.addColumn("cf".getBytes(), StarModel.X.getBytes(), Bytes.toBytes(cols[11]));
-                    put.addColumn("cf".getBytes(), StarModel.Y.getBytes(), Bytes.toBytes(cols[12]));
-                    put.addColumn("cf".getBytes(), StarModel.Z.getBytes(), Bytes.toBytes(cols[13]));
-                    put.addColumn("cf".getBytes(), StarModel.FLUX.getBytes(), Bytes.toBytes(cols[14]));
-                    put.addColumn("cf".getBytes(), StarModel.FLUX_ERR.getBytes(), Bytes.toBytes(cols[15]));
-                    put.addColumn("cf".getBytes(), StarModel.NORMMAG.getBytes(), Bytes.toBytes(cols[16]));
-                    put.addColumn("cf".getBytes(), StarModel.FLAG.getBytes(), Bytes.toBytes(cols[17]));
-                    put.addColumn("cf".getBytes(), StarModel.BACKGROUND.getBytes(), Bytes.toBytes(cols[18]));
-                    put.addColumn("cf".getBytes(), StarModel.THRESHOLD.getBytes(), Bytes.toBytes(cols[19]));
-                    put.addColumn("cf".getBytes(), StarModel.MAG_ERR.getBytes(), Bytes.toBytes(cols[20]));
-                    put.addColumn("cf".getBytes(), StarModel.ELLIPTICITY.getBytes(), Bytes.toBytes(cols[21]));
-                    put.addColumn("cf".getBytes(), StarModel.CLASS_STAR.getBytes(), Bytes.toBytes(cols[22]));
-                    put.addColumn("cf".getBytes(), StarModel.ORIG_CATID.getBytes(), Bytes.toBytes(cols[23]));
-                    puts.add(put);
-                    this.count.incrementAndGet();
+                List<String> values = this.jedisCluster.lrange(id, 0, 0);
+                String[] templateData = values.get(0).split(" ");
+                long size = this.jedisCluster.llen(id);
+                List<Put> puts = new ArrayList<>((int) size);
+                Put put = new Put((rowkeyPrefix + id + "_" + templateData[24]).getBytes());
+                put.setDurability(Durability.SKIP_WAL);
+                generatePut(templateData, put);
+                puts.add(put);
+                if (size > 1) {
+                    List<byte[]> compressDataInBytes = this.jedisCluster.lrange(id.getBytes(), 1, size - 1);
+                    for (byte[] value : compressDataInBytes) {
+                        String[] cols = UnCompressUtil.UnCompress(value, templateData);
+                        if (cols == null) {
+                            System.out.println("解压失败：" + id);
+                            continue;
+                        }
+                        put = new Put((rowkeyPrefix + id + "_" + cols[24]).getBytes());
+                        put.setDurability(Durability.SKIP_WAL);
+                        generatePut(cols, put);
+                        puts.add(put);
+                        this.count.incrementAndGet();
+                    }
                 }
                 bm.mutate(puts);
             }
@@ -94,5 +84,31 @@ public class PutsThread implements Runnable {
             System.out.println("id为：" + name + "(" + startId + "-" + endId + ")完成");
         }
 
+    }
+
+    public void generatePut(String[] cols, Put put) {
+        put.addColumn("cf".getBytes(), StarModel.CCD_NUM.getBytes(), Bytes.toBytes(cols[1]));
+        put.addColumn("cf".getBytes(), StarModel.IMAGEID.getBytes(), Bytes.toBytes(cols[2]));
+        put.addColumn("cf".getBytes(), StarModel.ZONE.getBytes(), Bytes.toBytes(cols[3]));
+        put.addColumn("cf".getBytes(), StarModel.RA.getBytes(), Bytes.toBytes(cols[4]));
+        put.addColumn("cf".getBytes(), StarModel.DEC.getBytes(), Bytes.toBytes(cols[5]));
+        put.addColumn("cf".getBytes(), StarModel.MAG.getBytes(), Bytes.toBytes(cols[6]));
+        put.addColumn("cf".getBytes(), StarModel.X_PIX.getBytes(), Bytes.toBytes(cols[7]));
+        put.addColumn("cf".getBytes(), StarModel.Y_PIX.getBytes(), Bytes.toBytes(cols[8]));
+        put.addColumn("cf".getBytes(), StarModel.RA_ERR.getBytes(), Bytes.toBytes(cols[9]));
+        put.addColumn("cf".getBytes(), StarModel.DEC_ERR.getBytes(), Bytes.toBytes(cols[10]));
+        put.addColumn("cf".getBytes(), StarModel.X.getBytes(), Bytes.toBytes(cols[11]));
+        put.addColumn("cf".getBytes(), StarModel.Y.getBytes(), Bytes.toBytes(cols[12]));
+        put.addColumn("cf".getBytes(), StarModel.Z.getBytes(), Bytes.toBytes(cols[13]));
+        put.addColumn("cf".getBytes(), StarModel.FLUX.getBytes(), Bytes.toBytes(cols[14]));
+        put.addColumn("cf".getBytes(), StarModel.FLUX_ERR.getBytes(), Bytes.toBytes(cols[15]));
+        put.addColumn("cf".getBytes(), StarModel.NORMMAG.getBytes(), Bytes.toBytes(cols[16]));
+        put.addColumn("cf".getBytes(), StarModel.FLAG.getBytes(), Bytes.toBytes(cols[17]));
+        put.addColumn("cf".getBytes(), StarModel.BACKGROUND.getBytes(), Bytes.toBytes(cols[18]));
+        put.addColumn("cf".getBytes(), StarModel.THRESHOLD.getBytes(), Bytes.toBytes(cols[19]));
+        put.addColumn("cf".getBytes(), StarModel.MAG_ERR.getBytes(), Bytes.toBytes(cols[20]));
+        put.addColumn("cf".getBytes(), StarModel.ELLIPTICITY.getBytes(), Bytes.toBytes(cols[21]));
+        put.addColumn("cf".getBytes(), StarModel.CLASS_STAR.getBytes(), Bytes.toBytes(cols[22]));
+        put.addColumn("cf".getBytes(), StarModel.ORIG_CATID.getBytes(), Bytes.toBytes(cols[23]));
     }
 }

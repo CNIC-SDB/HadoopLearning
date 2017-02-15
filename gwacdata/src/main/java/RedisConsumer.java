@@ -22,8 +22,8 @@ public class RedisConsumer {
         long startTime = new Date().getTime();
         System.out.println("开始：" + startTime);
         AtomicInteger count = new AtomicInteger(0);
-        CountDownLatch latch = new CountDownLatch(18);
         int readThreadNum = Integer.valueOf(args[0]);
+        CountDownLatch latch = new CountDownLatch(readThreadNum);
         ExecutorService pool = Executors.newFixedThreadPool(readThreadNum);
         Set<HostAndPort> jedisClusterNodes = new HashSet<>();
         for (int start = 68, port = 7001; start < 88; start++) {
@@ -34,9 +34,9 @@ public class RedisConsumer {
         JedisCluster js = new JedisCluster(jedisClusterNodes);
 
         Configuration configuration = HBaseConfiguration.create();
-        configuration.addResource("hbase-site.xml");
-        configuration.addResource("core-site.xml");
-        BufferedMutatorParams params = new BufferedMutatorParams(TableName.valueOf("gwacdata"));
+        configuration.addResource("/home/wamdm/hbase-1.2.4/conf/hbase-site.xml");
+        configuration.addResource("/home/wamdm/hadoop-2.7.3/etc/hadoop/core-site.xml");
+        BufferedMutatorParams params = new BufferedMutatorParams(TableName.valueOf("gwacdata1"));
         params.writeBufferSize(Long.valueOf(args[1]))
                 .pool(Executors.newFixedThreadPool(Integer.valueOf(args[2])))
                 .listener(new BufferedMutator.ExceptionListener() {
