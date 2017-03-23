@@ -8,6 +8,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,33 +26,34 @@ public class PutsThread implements Runnable {
     private String name;
     private int startId;
     private int endId;
+    private ConcurrentLinkedQueue<String> messages;
 
-    public PutsThread(BufferedMutator bm, Set<String> ids, JedisCluster jedisCluster,
-                      String id, CountDownLatch latch, AtomicInteger count, String name, int startId, int endId) {
+    public PutsThread(BufferedMutator bm, JedisCluster jedisCluster, ConcurrentLinkedQueue<String> messages,
+                      CountDownLatch latch, AtomicInteger count, String name, int startId, int endId) {
         this.bm = bm;
-        this.ids = ids;
         this.jedisCluster = jedisCluster;
-        this.id = id;
         this.latch = latch;
         this.count = count;
         this.name = name;
         this.startId = startId;
         this.endId = endId;
+        this.messages = messages;
     }
 
     @Override
     public void run() {
         try {
+            this.messages.offer("开始处理id：" + name + "(" + startId + "-" + endId + ")");
             System.out.println("开始处理id：" + name + "(" + startId + "-" + endId + ")");
             DecimalFormat df = new DecimalFormat("000000");
-            DecimalFormat df1 = new DecimalFormat("000");
+            DecimalFormat df1 = new DecimalFormat("0000");
             for (int i = startId; i <= endId; i++) {
                 String id = this.name + i;
                 if (!jedisCluster.exists(id))
                     continue;
                 String[] splits = id.split("_");
-                String splitNum = df.format(Integer.valueOf(splits[2])).substring(0, 2);
-                String rowkeyPrefix = df1.format((Integer.valueOf(splits[1]) - 1) * 18 + Integer.valueOf(splitNum));
+                String splitNum = df.format(Integer.valueOf(splits[2])).substring(0, 3);
+                String rowkeyPrefix = df1.format((Integer.valueOf(splits[1]) - 1) * 180 + Integer.valueOf(splitNum));
                 List<String> values = this.jedisCluster.lrange(id, 0, 0);
                 String[] templateData = values.get(0).split(" ");
                 long size = this.jedisCluster.llen(id);
@@ -65,7 +67,7 @@ public class PutsThread implements Runnable {
                     for (byte[] value : compressDataInBytes) {
                         String[] cols = UnCompressUtil.UnCompress(value, templateData);
                         if (cols == null) {
-                            System.out.println("解压失败：" + id);
+                            this.messages.offer("解压失败：" + id);
                             continue;
                         }
                         put = new Put((rowkeyPrefix + id + "_" + cols[24]).getBytes());
@@ -81,7 +83,7 @@ public class PutsThread implements Runnable {
             e.printStackTrace();
         } finally {
             this.latch.countDown();
-            System.out.println("id为：" + name + "(" + startId + "-" + endId + ")完成");
+            this.messages.offer("id为：" + name + "(" + startId + "-" + endId + ")完成");
         }
 
     }
