@@ -60,7 +60,7 @@ public class RedisConsumer {
                     }
                 });
         String keyPrefix = "ref_" + args[3] + "_";
-
+        boolean isCompressed = "1".equals(args[4]);
         Thread thread = new Thread(new WriteLogThread(queue));
         thread.start();
         try (Connection connection = ConnectionFactory.createConnection(configuration);
@@ -68,7 +68,7 @@ public class RedisConsumer {
             for (int i = 0; i < readThreadNum; i++) {
                 int startId = i * 180000 / readThreadNum;
                 int endId = startId + 180000 / readThreadNum - 1;
-                pool.submit(new PutsThread(bm, js, queue, latch, count, keyPrefix, startId, endId));
+                pool.submit(new PutsThread(bm, js, queue, latch, count, keyPrefix, startId, endId, isCompressed));
             }
 
             latch.await();

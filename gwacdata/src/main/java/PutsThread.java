@@ -27,9 +27,10 @@ public class PutsThread implements Runnable {
     private int startId;
     private int endId;
     private ConcurrentLinkedQueue<String> messages;
+    private boolean isCompressed;
 
     public PutsThread(BufferedMutator bm, JedisCluster jedisCluster, ConcurrentLinkedQueue<String> messages,
-                      CountDownLatch latch, AtomicInteger count, String name, int startId, int endId) {
+                      CountDownLatch latch, AtomicInteger count, String name, int startId, int endId, boolean isCompressed) {
         this.bm = bm;
         this.jedisCluster = jedisCluster;
         this.latch = latch;
@@ -38,6 +39,7 @@ public class PutsThread implements Runnable {
         this.startId = startId;
         this.endId = endId;
         this.messages = messages;
+        this.isCompressed = isCompressed;
     }
 
     @Override
@@ -62,19 +64,32 @@ public class PutsThread implements Runnable {
                 put.setDurability(Durability.SKIP_WAL);
                 generatePut(templateData, put);
                 puts.add(put);
+                this.count.incrementAndGet();
                 if (size > 1) {
-                    List<byte[]> compressDataInBytes = this.jedisCluster.lrange(id.getBytes(), 1, size - 1);
-                    for (byte[] value : compressDataInBytes) {
-                        String[] cols = UnCompressUtil.UnCompress(value, templateData);
-                        if (cols == null) {
-                            this.messages.offer("解压失败：" + id);
-                            continue;
+                    if (isCompressed) {
+                        List<byte[]> compressDataInBytes = this.jedisCluster.lrange(id.getBytes(), 1, size - 1);
+                        for (byte[] value : compressDataInBytes) {
+                            String[] cols = UnCompressUtil.UnCompress(value, templateData);
+                            if (cols == null) {
+                                this.messages.offer("解压失败：" + id);
+                                continue;
+                            }
+                            put = new Put((rowkeyPrefix + id + "_" + cols[24]).getBytes());
+                            put.setDurability(Durability.SKIP_WAL);
+                            generatePut(cols, put);
+                            puts.add(put);
+                            this.count.incrementAndGet();
                         }
-                        put = new Put((rowkeyPrefix + id + "_" + cols[24]).getBytes());
-                        put.setDurability(Durability.SKIP_WAL);
-                        generatePut(cols, put);
-                        puts.add(put);
-                        this.count.incrementAndGet();
+                    } else {
+                        List<String> datas = this.jedisCluster.lrange(id, 1, size - 1);
+                        for (String data : datas) {
+                            String[] cols = data.split(" ");
+                            put = new Put((rowkeyPrefix + id + "_" + cols[24]).getBytes());
+                            put.setDurability(Durability.SKIP_WAL);
+                            generatePut(cols, put);
+                            puts.add(put);
+                            this.count.incrementAndGet();
+                        }
                     }
                 }
                 bm.mutate(puts);

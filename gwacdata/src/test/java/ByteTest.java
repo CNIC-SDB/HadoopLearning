@@ -7,7 +7,10 @@ import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.*;
 
@@ -28,7 +31,7 @@ public class ByteTest {
         return array;
     }
 
-    @Test
+
     public void testBytes() {
         System.out.println("String 3456 length:" + Bytes.toBytes("3456").length);
         System.out.println("int 3456 length:" + Bytes.toBytes(3456).length);
@@ -48,8 +51,10 @@ public class ByteTest {
                 jedisClusterNodes.add(new HostAndPort("10.0.83." + start, port));
             }
         }
-        BinaryJedisCluster js = new BinaryJedisCluster(jedisClusterNodes);
-        Set<String> keys = RedisConsumer.keys("ref_1_1", js);
+        JedisCluster js = new JedisCluster(jedisClusterNodes);
+        if (!js.exists("ref_1_136917"))
+            System.out.println("not exist");
+        Set<String> keys = RedisConsumer.keys("ref_1_136917", js);
         System.out.println(keys.size());
         for (String key : keys) {
             if (js.llen(key.getBytes()) > 1) {
@@ -86,7 +91,7 @@ public class ByteTest {
 
     }
 
-    @Test
+
     public void rowKewTest() {
         Set<HostAndPort> jedisClusterNodes = new HashSet<>();
         for (int start = 68, port = 7001; start < 88; start++) {
@@ -126,5 +131,21 @@ public class ByteTest {
                 + (byte) ((b >> 5) & 0x1) + (byte) ((b >> 4) & 0x1)
                 + (byte) ((b >> 3) & 0x1) + (byte) ((b >> 2) & 0x1)
                 + (byte) ((b >> 1) & 0x1) + (byte) ((b >> 0) & 0x1);
+    }
+
+
+    public void readFile() {
+        String filePath = "C:\\Users\\liuang\\Desktop\\RA240_DEC10_sqd225-ccd2-301920.cat";
+        try {
+            List<String> content = Files.readAllLines(Paths.get(filePath), Charset.defaultCharset());
+            System.out.println(content.size());
+            String[] datas = content.get(0).split(" ");
+            for (String data : datas) {
+                System.out.println(data);
+            }
+            System.out.println(content.get(0).split(" ").length);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
