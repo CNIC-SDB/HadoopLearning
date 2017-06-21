@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+/**
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+-->
+<configuration>
+    <property>
+        <name>hbase.rootdir</name>
+        <value>hdfs://wamdm80:9000/hbase</value>
+    </property>
+    <property>
+        <name>hbase.cluster.distributed</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>wamdm81,wamdm82,wamdm83,wamdm84,wamdm85,wamdm91,wamdm93</value>
+    </property>
+    <property>
+        <name>hbasee.zookeeper.property.dataDir</name>
+        <value>/home/wamdm/hbase-1.2.4/zookeeper-data</value>
+    </property>
+    <property>
+        <name>hbase.master.info.port</name>
+        <value>60010</value>
+    </property>
+    <property>
+        <name>hbase.hregion.max.filesize</name>
+        <value>21474836480</value>
+        <description>
+            Maximum HStoreFile size. If any one of a column families' HStoreFiles has
+            grown to exceed this value, the hosting HRegion is split in two.
+        </description>
+    </property>
+    <property>
+        <name>hbase.hstore.compactionThreshold</name>
+        <value>6</value>
+        <description>
+            If more than this number of HStoreFiles in any one HStore
+            (one HStoreFile is written per flush of memstore) then a compaction
+            is run to rewrite all HStoreFiles files as one. Larger numbers
+            put off compaction but when it runs, it takes longer to complete.
+        </description>
+    </property>
+    <property>
+        <name>hbase.hstore.blockingStoreFiles</name>
+        <value>10</value>
+        <description>
+            If more than this number of StoreFiles in any one Store
+            (one StoreFile is written per flush of MemStore) then updates are
+            blocked for this HRegion until a compaction is completed, or
+            until hbase.hstore.blockingWaitTime has been exceeded.
+        </description>
+    </property>
+    <!--
+    <property>
+        <name>hbase.regionserver.global.memstore.upperLimit</name>
+        <value>0.55</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.global.memstore.lowerLimit</name>
+        <value>0.50</value>
+    </property>
+    -->
+    <property>
+        <name>hbase.hregion.memstore.flush.size</name>
+        <value>134217728</value>
+        <description>
+            Memstore will be flushed to disk if size of the memstore
+            exceeds this number of bytes. Value is checked by a thread that runs
+            every hbase.server.thread.wakefrequency.
+        </description>
+    </property>
+    <property>
+        <name>hbase.hregion.memstore.block.multiplier</name>
+        <value>4</value>
+        <description>
+            Block updates if memstore has hbase.hregion.memstore.block.multiplier
+            times hbase.hregion.memstore.flush.size bytes. Useful preventing
+            runaway memstore during spikes in update traffic. Without an
+            upper-bound, memstore fills such that when it flushes the
+            resultant flush files take a long time to compact or split, or
+            worse, we OOME.
+        </description>
+    </property>
+    <property>
+        <name>hbase.client.write.buffer</name>
+        <value>20971520</value>
+        <description>Default size of the HTable client write buffer in bytes.
+            A bigger buffer takes more memory -- on both the client and server
+            side since server instantiates the passed write buffer to process
+            it -- but a larger buffer size reduces the number of RPCs made.
+            For an estimate of server-side memory-used, evaluate
+            hbase.client.write.buffer * hbase.regionserver.handler.count
+        </description>
+    </property>
+
+    <property>
+        <name>hbase.regionserver.handler.count</name>
+        <value>200</value>
+        <description>Count of RPC Listener instances spun up on RegionServers.
+            Same property is used by the Master for count of master handlers.
+        </description>
+    </property>
+    <property>
+        <name>hfile.block.cache.size</name>
+        <value>0.20</value>
+    </property>
+</configuration>
