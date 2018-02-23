@@ -1,5 +1,5 @@
+import data.gwac.v2.RedisConsumer;
 import org.apache.commons.lang.math.RandomUtils;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Test;
 import redis.clients.jedis.BinaryJedisCluster;
@@ -8,7 +8,6 @@ import redis.clients.jedis.JedisCluster;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -75,7 +74,7 @@ public class ByteTest {
 //                }
 //                for(int i=0;i<valuesInBytes.size();i++){
 //                    try{
-//                        String[] originalValues= UnCompressUtil.UnCompress(valuesInBytes.get(i),new String(values.get(0)).split(" "));
+//                        String[] originalValues= data.gwac.v2.UnCompressUtil.UnCompress(valuesInBytes.get(i),new String(values.get(0)).split(" "));
 //                        System.out.print(i+" ");
 //                        for(String string:originalValues)
 //                            System.out.print(string+" ");

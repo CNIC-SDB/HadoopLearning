@@ -62,7 +62,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>RedisConsumer</mainClass>
+                            <mainClass>data.gwac.v2.RedisConsumer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
